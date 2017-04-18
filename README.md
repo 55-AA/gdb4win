@@ -12,7 +12,7 @@ Copy local.gdbinit.x64 or local.gdbinit.x86 to ～/.gdbinit, and copy pygdb.py t
 
 ## Example
 
-+ Type "myhelp" to get suppurted command list. Type "help <command>" to get more detial information.
++ Type "myhelp" to get suppurted command list. Type "help command" to get more detial information.
 
 > 
     (gdb) myhelp
@@ -28,6 +28,11 @@ Copy local.gdbinit.x64 or local.gdbinit.x86 to ～/.gdbinit, and copy pygdb.py t
         pret
         atn
         Use help <cmd> to get detial information.
+    (gdb) help atn
+        Attach process by name.
+        Example:
+            atn babyrun
+    (gdb)
 
 + Lunch a program and break at entry point.
 
