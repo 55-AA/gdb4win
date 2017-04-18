@@ -1,0 +1,807 @@
+#refer https://github.com/gdbinit/Gdbinit
+#Modify by Tony @ 20150523.
+#Copy the file to ~/.gdbinit
+
+source ~/pygdb.py
+# __________________gdb options_________________
+
+# set to 1 to have ARM target debugging as default, use the "arm" command to switch inside gdb
+set $ARM = 0
+# set to 0 if you have problems with the colorized prompt - reported by Plouj with Ubuntu gdb 7.2
+set $COLOREDPROMPT = 1
+# color the first line of the disassembly - default is green, if you want to change it search for
+# SETCOLOR1STLINE and modify it :-)
+set $SETCOLOR1STLINE = 0
+# set to 0 to remove display of objectivec messages (default is 1)
+set $SHOWOBJECTIVEC = 1
+# set to 0 to remove display of cpu registers (default is 1)
+set $SHOWCPUREGISTERS = 1
+# set to 1 to enable display of stack (default is 0)
+set $SHOWSTACK = 0
+# set to 1 to enable display of data window (default is 0)
+set $SHOWDATAWIN = 0
+# set to 0 to disable colored display of changed registers
+set $SHOWREGCHANGES = 1
+# set to 1 so skip command to execute the instruction at the new location
+# by default it EIP/RIP will be modified and update the new context but not execute the instruction
+set $SKIPEXECUTE = 0
+# if $SKIPEXECUTE is 1 configure the type of execution
+# 1 = use stepo (do not get into calls), 0 = use stepi (step into calls)
+set $SKIPSTEP = 1
+# show the ARM opcodes - change to 0 if you don't want such thing (in x/i command)
+set $ARMOPCODES = 1
+# x86 disassembly flavor: 0 for Intel, 1 for AT&T
+set $X86FLAVOR = 0
+# use colorized output or not
+set $USECOLOR = 1
+# to use with remote KDP
+set $KDP64BITS = -1
+set $64BITS = 0
+
+set disassembly-flavor intel
+set confirm off
+set verbose off
+set history filename ~/.gdb_history
+set history save
+
+set output-radix 0x10
+set input-radix 0x10
+
+# These make gdb never pause in its output
+set height 0
+set width 0
+
+set $SHOW_CONTEXT = 1
+set $SHOW_NEST_INSN = 0
+
+set $CONTEXTSIZE_STACK = 6
+set $CONTEXTSIZE_DATA  = 8
+set $CONTEXTSIZE_CODE  = 8
+
+# __________________end gdb options_________________
+#
+
+# __________________color functions_________________
+#
+# color codes
+set $BLACK = 0
+set $RED = 1
+set $GREEN = 2
+set $YELLOW = 3
+set $BLUE = 4
+set $MAGENTA = 5
+set $CYAN = 6
+set $WHITE = 7
+
+# CHANGME: If you want to modify the "theme" change the colors here
+#          or just create a ~/.gdbinit.local and set these variables there
+set $COLOR_REGNAME = $GREEN
+set $COLOR_REGVAL = $BLACK
+set $COLOR_REGVAL_MODIFIED  = $RED
+set $COLOR_SEPARATOR = $BLUE
+set $COLOR_CPUFLAGS = $RED
+
+# this is ugly but there's no else if available :-(
+define color
+ if $USECOLOR == 1
+    # BLACK
+    if $arg0 == 0
+        echo \033[30m
+    else
+        # RED
+        if $arg0 == 1
+            echo \033[31m
+        else
+            # GREEN
+            if $arg0 == 2
+                echo \033[32m
+            else
+                # YELLOW
+                if $arg0 == 3
+                    echo \033[33m
+                else
+                    # BLUE
+                    if $arg0 == 4
+                        echo \033[34m
+                    else
+                        # MAGENTA
+                        if $arg0 == 5
+                            echo \033[35m
+                        else
+                            # CYAN
+                            if $arg0 == 6
+                                echo \033[36m
+                            else
+                                # WHITE
+                                if $arg0 == 7
+                                    echo \033[37m
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+     end
+ end
+end
+
+define color_reset
+    if $USECOLOR == 1
+       echo \033[0m
+    end
+end
+
+define color_bold
+    if $USECOLOR == 1
+       echo \033[1m
+    end
+end
+
+define color_underline
+    if $USECOLOR == 1
+       echo \033[4m
+    end
+end
+# _____________breakpoint aliases_____________
+define bl
+    info breakpoints
+end
+document bl
+Usage: bl
+| List all breakpoints.
+end
+
+
+define _bp
+    if $argc != 1
+        help _bp
+    else
+        break $arg0
+    end
+end
+document _bp
+Usage: _bp LOCATION
+| Set a breakpoint.
+| LOCATION may be a line number, function name, or "*" and an address.
+| To break on a symbol you must enclose symbol name inside "".
+| Example:
+| _bp "[NSControl stringValue]"
+| Or else you can use directly the break command (break [NSControl stringValue])
+end
+
+
+define bcaddr
+    if $argc != 1
+        help bc
+    else
+        clear $arg0
+    end
+end
+document bcaddr
+Usage: bcaddr LOCATION
+| Clear breakpoint.
+| LOCATION may be a line number, function name, or "*" and an address.
+end
+
+define bc 
+    if $argc != 1
+        help bc
+    else
+        delete $arg0
+    end
+end
+document bc
+Usage: bc LOCATION
+| Clear breakpoint by id which from 'bl'.
+end
+
+define be
+    if $argc != 1
+        help be
+    else
+        enable $arg0
+    end
+end
+document be
+Usage: be NUM
+| Enable breakpoint with number NUM.
+end
+
+
+define bd
+    if $argc != 1
+        help bd
+    else
+        disable $arg0
+    end
+end
+document bd
+Usage: bd NUM
+| Disable breakpoint with number NUM.
+end
+
+
+define _bpt
+    if $argc != 1
+        help _bpt
+    else
+        tbreak $arg0
+    end
+end
+document _bpt
+Usage: _bpt LOCATION
+| Set a temporary breakpoint.
+| This breakpoint will be automatically deleted when hit!.
+| LOCATION may be a line number, function name, or "*" and an address.
+end
+
+
+define _bpm
+    if $argc != 1
+        help _bpm
+    else
+        awatch $arg0
+    end
+end
+document _bpm
+Usage: _bpm EXPRESSION
+| Set a read/write breakpoint on EXPRESSION, e.g. *address.
+end
+
+
+define _bph
+    if $argc != 1
+        help _bph
+    else
+        hb $arg0
+    end
+end
+document _bph
+Usage: _bph LOCATION
+| Set hardware assisted breakpoint.
+| LOCATION may be a line number, function name, or "*" and an address.
+end
+
+
+define _bpht
+    if $argc != 1
+        help _bpht
+    else
+        thbreak $arg0
+    end
+end
+document _bpht
+Usage: _bpht LOCATION
+| Set a temporary hardware breakpoint.
+| This breakpoint will be automatically deleted when hit!
+| LOCATION may be a line number, function name, or "*" and an address.
+end
+
+# __________hex/ascii dump an address_________
+define ascii_char
+    if $argc != 1
+        help ascii_char
+    else
+        # thanks elaine :)
+        set $_c = *(unsigned char *)($arg0)
+        if ($_c < 0x20 || $_c > 0x7E)
+            printf "."
+        else
+            printf "%c", $_c
+        end
+    end
+end
+document ascii_char
+Usage: ascii_char ADDR
+| Print ASCII value of byte at address ADDR.
+| Print "." if the value is unprintable.
+end
+
+
+define hex_quad
+    if $argc != 1
+        help hex_quad
+    else
+        printf "%02X %02X %02X %02X %02X %02X %02X %02X", \
+               *(unsigned char*)($arg0), *(unsigned char*)($arg0 + 1),     \
+               *(unsigned char*)($arg0 + 2), *(unsigned char*)($arg0 + 3), \
+               *(unsigned char*)($arg0 + 4), *(unsigned char*)($arg0 + 5), \
+               *(unsigned char*)($arg0 + 6), *(unsigned char*)($arg0 + 7)
+    end
+end
+document hex_quad
+Usage: hex_quad ADDR
+| Print eight hexadecimal bytes starting at address ADDR.
+end
+
+
+define hexdump
+    if $argc == 1
+        hexdump_aux $arg0
+    else
+        if $argc == 2
+            set $_count = 0
+            while ($_count < $arg1)
+                set $_i = ($_count * 0x10)
+                hexdump_aux $arg0+$_i
+                set $_count++
+            end
+        else
+            help hexdump
+        end
+    end
+end
+document hexdump
+Usage: hexdump ADDR <NR_LINES>
+| Display a 16-byte hex/ASCII dump of memory starting at address ADDR.
+| Optional parameter is the number of lines to display if you want more than one. 
+end
+
+define hexdump_aux_db
+    if $argc != 1
+        help hexdump_aux
+    else
+        color_bold
+        if ($64BITS == 1)
+            printf "0x%016lX : ", $arg0
+        else
+            printf "0x%08X : ", $arg0
+        end
+        color_reset
+        hex_quad $arg0
+        color_bold
+        printf " - "
+        color_reset
+        hex_quad $arg0+8
+        printf " "
+        color_bold
+        ascii_char $arg0+0x0
+        ascii_char $arg0+0x1
+        ascii_char $arg0+0x2
+        ascii_char $arg0+0x3
+        ascii_char $arg0+0x4
+        ascii_char $arg0+0x5
+        ascii_char $arg0+0x6
+        ascii_char $arg0+0x7
+        ascii_char $arg0+0x8
+        ascii_char $arg0+0x9
+        ascii_char $arg0+0xA
+        ascii_char $arg0+0xB
+        ascii_char $arg0+0xC
+        ascii_char $arg0+0xD
+        ascii_char $arg0+0xE
+        ascii_char $arg0+0xF
+        color_reset
+        printf "\n"
+    end
+end
+
+define hexdump_aux_dd
+    if $argc != 1
+        help hexdump_aux
+    else
+        color_bold
+        if ($64BITS == 1)
+            printf "0x%016lX : %08X %08X %08X %08X\n", $arg0, \
+                *(unsigned long*)($arg0 + 0), *(unsigned long*)($arg0 + 4),      \
+                *(unsigned long*)($arg0 + 8), *(unsigned long*)($arg0 + 0xc)
+        else
+            printf "0x%08X : %08X %08X %08X %08X\n", $arg0, \
+                *(unsigned long*)($arg0 + 0), *(unsigned long*)($arg0 + 4),      \
+                *(unsigned long*)($arg0 + 8), *(unsigned long*)($arg0 + 0xc)
+        end
+        color_reset
+    end
+
+end
+
+define hexdump_aux_dq
+    if $argc != 1
+        help hexdump_aux
+    else
+        color_bold
+        if ($64BITS == 1)
+            printf "0x%016lX : %016lX %016lX\n", $arg0, \
+                *(unsigned long*)($arg0 + 0), *(unsigned long*)($arg0 + 8)
+        else
+            printf "0x%08X : %016X %016X\n", $arg0, \
+                *(unsigned long*)($arg0 + 0), *(unsigned long*)($arg0 + 8)
+        end
+        color_reset
+    end
+
+end
+
+define hexdump_aux
+    if $argc != 1
+        help hexdump_aux
+    else
+        if $print_bytes_type == 1
+            hexdump_aux_db $arg0
+        else
+            if $print_bytes_type == 4
+                hexdump_aux_dd $arg0
+            else
+                if $print_bytes_type == 8
+                    hexdump_aux_dq $arg0
+                else
+                    help hexdump_aux
+                end                    
+            end                            
+        end
+    end
+end
+
+document hexdump_aux
+Usage: hexdump_aux ADDR
+| Display a 16-byte hex/ASCII dump of memory at address ADDR.
+end
+
+# _______________data window__________________
+define ddump
+    if $argc != 1
+        help ddump
+    else
+        color $COLOR_SEPARATOR
+        if $ARM == 1
+            printf "[0x%08X]", $data_addr
+        else
+            if ($64BITS == 1)
+                printf "[0x%04X:0x%016lX]", $ds, $data_addr
+            else
+                printf "[0x%04X:0x%08X]", $ds, $data_addr
+            end
+        end
+
+        color $COLOR_SEPARATOR
+        printf "------------------------"
+        printf "-------------------------------"
+        if ($64BITS == 1)
+            printf "-------------------------------------"
+        end
+        color_bold
+        color $COLOR_SEPARATOR
+        printf "[data]\n"
+        color_reset
+        set $_count = 0
+        while ($_count < $arg0)
+            set $_i = ($_count * 0x10)
+            hexdump $data_addr+$_i
+            set $_count++
+        end
+    end
+end
+document ddump
+Usage: ddump NUM
+| Display NUM lines of hexdump for address in $data_addr global variable.
+end
+
+define _db
+    set $print_bytes_type = 1
+    if $argc == 0
+            ddump 8
+            set $data_addr = $data_addr + 0x80
+    else
+         if $argc == 1
+            set $data_addr = $arg0
+            ddump 8
+            set $data_addr = $data_addr + 0x80
+        else
+            help _db
+        end
+    end
+end
+document _db
+Usage: _db ADDR
+| Display 8 lines of a hex dump of address starting at ADDR.
+end
+
+define _dd
+    set $print_bytes_type = 4
+    if $argc == 0
+            ddump 8
+            set $data_addr = $data_addr + 0x80
+    else
+         if $argc == 1
+            set $data_addr = $arg0
+            ddump 8
+            set $data_addr = $data_addr + 0x80
+        else
+            help _dd
+        end
+    end
+end
+
+document _dd
+Usage: _dd ADDR
+| Display 8 lines of a hex dump of address starting at ADDR.
+end
+
+define _dq
+    set $print_bytes_type = 8
+    if $argc == 0
+            ddump 8
+            set $data_addr = $data_addr + 0x80
+    else
+         if $argc == 1
+            set $data_addr = $arg0
+            ddump 8
+            set $data_addr = $data_addr + 0x80
+        else
+            help _dd
+        end
+    end
+end
+
+document _dq
+Usage: _dq ADDR
+| Display 8 lines of a hex dump of address starting at ADDR.
+end
+
+define _uu
+    if $argc == 0
+        x/8i
+    else
+        x/8i $arg0
+    end
+end
+
+document _uu
+Usage: _uu ADDR
+| disasm 8 instruction of address starting at ADDR.
+end
+
+define upc
+    x/8i $pc
+end
+
+document upc
+Usage: upc ADDR
+| disasm 8 instruction of current pc.
+end
+
+define flagsx86
+    # OF (overflow) flag
+    if (((unsigned int)$eflags >> 0xB) & 1)
+        printf "O "
+        set $_of_flag = 1
+    else
+        printf "o "
+        set $_of_flag = 0
+    end
+    # DF (direction) flag
+    if (((unsigned int)$eflags >> 0xA) & 1)
+        printf "D "
+    else
+        printf "d "
+    end
+    # IF (interrupt enable) flag
+    if (((unsigned int)$eflags >> 9) & 1)
+        printf "I "
+    else
+        printf "i "
+    end
+    # TF (trap) flag
+    if (((unsigned int)$eflags >> 8) & 1)
+        printf "T "
+    else
+        printf "t "
+    end
+    # SF (sign) flag
+    if (((unsigned int)$eflags >> 7) & 1)
+        printf "S "
+        set $_sf_flag = 1
+    else
+        printf "s "
+        set $_sf_flag = 0
+    end
+    # ZF (zero) flag
+    if (((unsigned int)$eflags >> 6) & 1)
+        printf "Z "
+        set $_zf_flag = 1
+    else
+        printf "z "
+        set $_zf_flag = 0
+    end
+    # AF (adjust) flag
+    if (((unsigned int)$eflags >> 4) & 1)
+        printf "A "
+    else
+        printf "a "
+    end
+    # PF (parity) flag
+    if (((unsigned int)$eflags >> 2) & 1)
+        printf "P "
+        set $_pf_flag = 1
+    else
+        printf "p "
+        set $_pf_flag = 0
+    end
+    # CF (carry) flag
+    if ((unsigned int)$eflags & 1)
+        printf "C "
+        set $_cf_flag = 1
+    else
+        printf "c "
+        set $_cf_flag = 0
+    end
+    printf "\n"
+end
+document flagsx86
+Usage: flagsx86
+| Auxiliary function to set X86/X64 cpu flags.
+end
+
+
+define reg
+    if ($64BITS == 1)
+        Printf "RAX:%016lX RCX:%016lX RDX:%016lX RBX:%016lX\n", $rax, $rcx, $rdx, $rbx
+        Printf "RSI:%016lX RDI:%016lX RBP:%016lX RSP:%016lX\n", $rsi, $rdi, $rbp, $rsp
+        Printf "R8 :%016lX R9 :%016lX R10:%016lX R11:%016lX\n", $r8,  $r9,  $r10, $r11
+        Printf "R12:%016lX R13:%016lX R14:%016lX R15:%016lX\n", $r12, $r13, $r14, $r15
+        Printf "RIP:%016lX FLAGS:%016lX ", $pc, $eflags
+        flagsx86
+        Printf "RSP:%016lX\n", $rsp
+    else
+        Printf "EAX:%08X ECX:%08X EDX:%08X EBX:%08X\n", $eax, $ecx, $edx, $ebx
+        Printf "ESI:%08X EDI:%08X EBP:%08X ESP:%08X\n", $esi, $edi, $ebp, $esp
+        Printf "EIP:%08X FLAGS:%08X ", $pc, $eflags
+        flagsx86
+        Printf "ESP:%08X\n", $esp
+    end
+end
+
+document reg
+Usage: reg <address> [count]
+| Print register value.
+end
+
+# _______________process control______________
+define nn
+    if $argc == 0
+        nexti
+        x/i $pc
+    end
+    if $argc == 1
+        nexti $arg0
+        x/i $pc
+    end
+    if $argc > 1
+        help nn
+    end
+end
+document nn
+Usage: nn <NUM>
+| Step one instruction, but proceed through subroutine calls.
+| If NUM is given, then repeat it NUM times or till program stops.
+| This is alias for nexti.
+end
+
+define ss
+    if $argc == 0
+        stepi
+        x/i $pc
+    end
+    if $argc == 1
+        stepi $arg0
+        x/i $pc
+    end
+    if $argc > 1
+        help ss
+    end
+end
+document ss
+Usage: ss <NUM>
+| Step one instruction, but proceed through subroutine calls.
+| If NUM is given, then repeat it NUM times or till program stops.
+| This is alias for stepi.
+end
+
+define gg
+    if $argc == 1
+        tbreak $arg0
+        run
+        x/i $pc
+    else
+        help gg
+    end
+end
+document gg
+Usage: gg <NUM>
+| Step one instruction exactly.
+| If NUM is given, then repeat it NUM times or till program stops.
+| This is alias for stepi.
+end
+
+
+define pret
+    finish
+end
+document pret
+Usage: pret
+| Execute until selected stack frame returns (step out of current call).
+| Upon return, the value returned is printed and put in the value history.
+end
+
+
+define init
+    set $SHOW_NEST_INSN = 0
+    tbreak _init
+    run
+    x/8i $pc
+end
+document init
+Usage: init
+| Run program and break on _init().
+end
+
+
+define start
+    set $SHOW_NEST_INSN = 0
+    tbreak _start
+    run
+    x/8i $pc
+end
+document start
+Usage: start
+| Run program and break on _start().
+end
+
+
+define cstart
+    set $SHOW_NEST_INSN = 0
+    tbreak __libc_start_main
+    run
+    x/8i $pc
+end
+document cstart
+Usage: cstart
+| Run program and break on __libc_start_main().
+| Useful for stripped executables.
+end
+
+
+define main
+    set $SHOW_NEST_INSN = 0
+    tbreak main
+    run
+    x/8i $pc
+end
+document main
+Usage: main
+| Run program and break on main().
+end
+
+define goep
+    set $SHOW_NEST_INSN = 0
+    set breakpoint pending on
+
+    tbreak _init
+    run
+    oep noprint
+    tbreak *$entry_point_address
+    continue
+    x/8i $pc
+    set breakpoint pending auto
+end
+
+document goep
+Usage: goep
+| Find OEP address, and stop at it.
+end
+
+define myhelp
+    printf "\t goep\n"    
+    printf "\t init start cstart main\n"    
+    printf "\t bp bpt bph bpht bpm bl bc be bd\n"
+    printf "\t db dd dq dsp dpc\n"
+    printf "\t nn ss gg\n"
+    printf "\t uu upc\n"
+    printf "\t reg\n"    
+    printf "\t mod\n"
+    printf "\t oep\n"
+    printf "\t pret\n"
+    printf "\t atn\n"
+    printf "\t Use help <cmd> to get detial information.\n"
+end
