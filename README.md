@@ -2,15 +2,15 @@
 
 gdb4win is running in linux，unix and mac x86 platform.
 
-##Introduction
+## Introduction
 
 This tool is a extend for linux gdb, so that the Windbg command style can be uesd. In addition, there are some binary debug utils with python extend.
 
-##How to start
+## How to start
 
 Copy local.gdbinit.x64 or local.gdbinit.x86 to ～/.gdbinit, and copy pygdb.py to ～/pygdb.py.
 
-##Example
+## Example
 
 + Type "myhelp" to get suppurted command list. Type "help <command>" to get more detial information.
 
@@ -132,7 +132,7 @@ Copy local.gdbinit.x64 or local.gdbinit.x86 to ～/.gdbinit, and copy pygdb.py t
     attach to "./babyrun" (pid=7204).
     0xb773fdad in __kernel_vsyscall ()
 
-##Reference
+## Reference
 
 + [https://github.com/gdbinit/Gdbinit/blob/master/gdbinit](https://github.com/gdbinit/Gdbinit/blob/master/gdbinit)
 + [https://sourceware.org/gdb/current/onlinedocs/gdb/Python-API.html](https://sourceware.org/gdb/current/onlinedocs/gdb/Python-API.html)
