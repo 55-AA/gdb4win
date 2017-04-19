@@ -43,7 +43,7 @@ REGSTR = (
 
 def isreg(data):
     data = data.lower()
-    if data not in REGSTR:
+    if data[:2] not in REGSTR and data[:3] not in REGSTR:
         return None
     return '$' + data
 
