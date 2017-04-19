@@ -788,7 +788,7 @@ end
 
 document goep
 Usage: goep
-| Find OEP address, and stop at it.
+| Run program, at same times find that OEP address, then break on it.
 end
 
 define myhelp
@@ -803,5 +803,5 @@ define myhelp
     printf "\t oep\n"
     printf "\t pret\n"
     printf "\t atn\n"
-    printf "\t Use help <cmd> to get detial information.\n"
+    printf "\t Type 'help <cmd>' to get more detial information.\n"
 end

@@ -23,15 +23,15 @@ Copy local.gdbinit.x64 or local.gdbinit.x86 to ～/.gdbinit, and copy pygdb.py t
         nn ss gg
         uu upc
         reg
-        maps mod
+        mod
         oep
         pret
         atn
-        Use help <cmd> to get detial information.
+        Type 'help <cmd>' to get more detial information.
     (gdb) help atn
-        Attach process by name.
+        Attach a running process by name.
         Example:
-            atn babyrun
+            atn ./babyrun
     (gdb)
 
 + Lunch a program and break at entry point.
